@@ -5,6 +5,57 @@
 
 namespace py = pybind11;
 
+static void matrix_multiply(float *C, const float *A, const float *B, int m, int k, int n) {
+    for(int i = 0; i < m; i++){
+        for(int j = 0; j < n; j++){
+            float sum = 0;
+            for(int l = 0; l < k; l++){
+                sum += A[i * k + l] * B[l * n + j];
+            }
+            C[i * n + j] = sum;
+        }
+    }
+}
+
+static void transposed_matrix_multiply(float *C, const float *A_T, const float *B, int m, int k, int n) {
+    // A_T k * m
+    // B   k * n
+
+    for(int i = 0; i < m; i++){
+        for(int j = 0; j < n; j++){
+            float sum = 0;
+            for(int l = 0; l < k; l++){
+                sum += A_T[l * m + i] * B[l * n + j];
+            }
+            C[i * n + j] = sum;
+        }
+    }
+
+}
+
+static void softmax(float *H, int m, int n) {
+    for(int i = 0; i < m; i++){
+        float max_val = H[i * n];
+        for(int j = 1; j < n; j++){
+            if(H[i * n + j] > max_val){
+                max_val = H[i * n + j];
+            }
+        }
+
+        double sum = 0.0f;
+        for(int j = 0; j < n; j++){
+            H[i * n + j] = exp(H[i * n + j] - max_val);
+            sum += H[i * n + j];
+        }
+
+
+        for(int j = 0; j < n; j++){
+            H[i * n + j] /= sum;
+        }
+    }    
+}
+
+
 
 void softmax_regression_epoch_cpp(const float *X, const unsigned char *y,
 								  float *theta, size_t m, size_t n, size_t k,
@@ -33,6 +84,28 @@ void softmax_regression_epoch_cpp(const float *X, const unsigned char *y,
      */
 
     /// BEGIN YOUR CODE
+
+    float *H = new float[batch * k];
+    float *grad = new float[n * k];
+
+    int num_batches = m / batch;
+    for(int i = 0 ; i < num_batches; i++){
+        int start_index = i * batch;
+        matrix_multiply(H, X + start_index * n, theta, batch, n, k);
+        softmax(H, batch, k);
+        for(size_t j = 0; j < batch; j++){
+            int index = start_index + j;
+            H[j * k + y[index]] -= 1;
+        }
+        transposed_matrix_multiply(grad, X + start_index * n, H, n, batch, k);
+        for(size_t j = 0; j < n * k; j++){
+            theta[j] -= lr * grad[j] / batch;
+        }
+    }
+
+    delete[] H;
+    delete[] grad;
+
 
     /// END YOUR CODE
 }

@@ -113,7 +113,20 @@ def softmax_regression_epoch(X, y, theta, lr = 0.1, batch=100):
         None
     """
     ### BEGIN YOUR CODE
-    pass
+    num_examples = X.shape[0]
+    num_classes = theta.shape[1]
+    num_batches = num_examples // batch
+    for i in range(num_batches):
+        X_batch = X[i * batch : (i + 1) * batch]
+        y_batch = y[i * batch : (i + 1) * batch]
+        H = X_batch @ theta
+        exp_H = np.exp(H)
+        sum_exp_H = np.sum(exp_H, axis=1)
+        Z = exp_H / sum_exp_H[:, np.newaxis]
+        I = np.zeros_like(Z)
+        I[np.arange(batch), y_batch] = 1
+        dtheta = X_batch.T @ (Z - I) / batch
+        theta -= lr * dtheta
     ### END YOUR CODE
 
 
@@ -140,7 +153,25 @@ def nn_epoch(X, y, W1, W2, lr = 0.1, batch=100):
         None
     """
     ### BEGIN YOUR CODE
-    pass
+    num_examples = X.shape[0]
+    num_classes = W2.shape[1]
+    num_batches = num_examples // batch
+
+    for i in range(num_batches):
+        X_batch = X[i * batch : (i + 1) * batch]
+        y_batch = y[i * batch : (i + 1) * batch]
+        H1 = X_batch @ W1
+        Z1 = np.maximum(H1, 0)
+        H2 = Z1 @ W2
+        exp_H2 = np.exp(H2)
+        sum_exp_H2 = np.sum(exp_H2, axis=1)
+        Z2 = exp_H2 / sum_exp_H2[:, np.newaxis]
+        I = np.zeros_like(Z2)
+        I[np.arange(batch), y_batch] = 1
+        dW2 = Z1.T @ (Z2 - I) / batch
+        dW1 = X_batch.T @ ((Z2 - I) @ W2.T * (Z1 > 0)) / batch
+        W1 -= lr * dW1
+        W2 -= lr * dW2
     ### END YOUR CODE
 
 
