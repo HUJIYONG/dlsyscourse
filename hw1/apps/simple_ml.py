@@ -10,7 +10,7 @@ sys.path.append("python/")
 import needle as ndl
 
 
-def parse_mnist(image_filesname, label_filename):
+def parse_mnist(image_filename, label_filename):
     """Read an images and labels file in MNIST format.  See this page:
     http://yann.lecun.com/exdb/mnist/ for a description of the file format.
 
@@ -32,9 +32,21 @@ def parse_mnist(image_filesname, label_filename):
                 labels of the examples.  Values should be of type np.int8 and
                 for MNIST will contain the values 0-9.
     """
-    ### BEGIN YOUR SOLUTION
-    raise NotImplementedError()
-    ### END YOUR SOLUTION
+    with gzip.open(image_filename, 'rb') as f:
+        # read image file header
+        magic, num_images, rows, cols = np.frombuffer(f.read(16), dtype=np.uint32, count=4).byteswap()
+        # read image data
+        X = np.frombuffer(f.read(), dtype=np.uint8).reshape(num_images, rows * cols).astype(np.float32)
+        # normalize image data
+        X = X / 255.0
+
+    with gzip.open(label_filename, 'rb') as f:
+        # read label file header
+        magic, num_labels = np.frombuffer(f.read(8), dtype=np.uint32, count=2).byteswap()
+        # read label data
+        y = np.frombuffer(f.read(), dtype=np.uint8)
+
+    return X, y
 
 
 def softmax_loss(Z, y_one_hot):
@@ -53,9 +65,13 @@ def softmax_loss(Z, y_one_hot):
     Returns:
         Average softmax loss over the sample. (ndl.Tensor[np.float32])
     """
-    ### BEGIN YOUR SOLUTION
-    raise NotImplementedError()
-    ### END YOUR SOLUTION
+    num_examples = Z.shape[0]
+    num_classes = Z.shape[1]
+    exp_Z = ndl.exp(Z)
+    sum_exp_Z = ndl.summation(exp_Z, axes=(1,))
+    log_sum_exp_Z = ndl.log(sum_exp_Z)
+    loss = -ndl.summation(Z * y_one_hot) + ndl.summation(log_sum_exp_Z)
+    return loss / num_examples
 
 
 def nn_epoch(X, y, W1, W2, lr=0.1, batch=100):
@@ -82,9 +98,36 @@ def nn_epoch(X, y, W1, W2, lr=0.1, batch=100):
             W2: ndl.Tensor[np.float32]
     """
 
-    ### BEGIN YOUR SOLUTION
-    raise NotImplementedError()
-    ### END YOUR SOLUTION
+    num_examples = X.shape[0]
+    num_classes = W2.shape[1]
+    num_batches = num_examples // batch
+    for i in range(num_batches):
+        X_batch = X[i * batch : (i + 1) * batch]
+        y_batch = y[i * batch : (i + 1) * batch]
+
+        # compute loss
+        X_batch = ndl.Tensor(X_batch)
+        Z1 = ndl.matmul(X_batch, W1)
+        A1 = ndl.relu(Z1)
+        Z2 = ndl.matmul(A1, W2)
+
+        y_one_hot = np.zeros((batch, num_classes))
+        y_one_hot[np.arange(batch), y_batch] = 1
+        y_one_hot = ndl.Tensor(y_one_hot)
+
+        loss = softmax_loss(Z2, y_one_hot)
+        loss.backward()
+
+        new_W1 = ndl.Tensor(W1.realize_cached_data() - lr * W1.grad.realize_cached_data())
+        new_W2 = ndl.Tensor(W2.realize_cached_data() - lr * W2.grad.realize_cached_data())
+
+        (W1, W2) = (new_W1, new_W2)
+
+    return (W1, W2)
+
+
+
+
 
 
 ### CODE BELOW IS FOR ILLUSTRATION, YOU DO NOT NEED TO EDIT

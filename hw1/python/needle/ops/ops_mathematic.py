@@ -220,6 +220,7 @@ def summation(a, axes=None):
     return Summation(axes)(a)
 
 
+
 class MatMul(TensorOp):
     def compute(self, a, b):
         return array_api.matmul(a, b)
@@ -284,9 +285,13 @@ class ReLU(TensorOp):
         return array_api.maximum(a, 0)
 
     def gradient(self, out_grad, node):
-        ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
-        ### END YOUR SOLUTION
+        a = node.inputs[0]
+        # relu_mask = a > 0
+        relu_mask = Tensor(
+            array_api.greater(a.realize_cached_data(), 0).astype(a.realize_cached_data().dtype),
+        )
+        return (multiply(out_grad, relu_mask),)
+        
 
 
 def relu(a):
