@@ -87,14 +87,35 @@ class Linear(Module):
         self.in_features = in_features
         self.out_features = out_features
 
-        ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
-        ### END YOUR SOLUTION
+        self.weight = Parameter(init.kaiming_uniform(
+            fan_in=in_features, 
+            fan_out=out_features, 
+            nonlinearity="relu", 
+            device=device, 
+            dtype=dtype,
+            requires_grad=True
+        ))
+
+        if bias == True:
+            self.bias = Parameter(ops.transpose(init.kaiming_uniform(
+                fan_in=out_features,
+                fan_out=1,
+                nonlinearity="relu",
+                device=device,
+                dtype=dtype,
+                requires_grad=True
+            )))
+        else:
+            self.bias = None
+
+        
 
     def forward(self, X: Tensor) -> Tensor:
-        ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
-        ### END YOUR SOLUTION
+        if self.bias == None:
+            return ops.matmul(X, self.weight)
+        else:
+            return ops.matmul(X, self.weight) + ops.broadcast_to(self.bias, (*X.shape[:-1], self.out_features))
+        
 
 
 class Flatten(Module):
@@ -106,9 +127,7 @@ class Flatten(Module):
 
 class ReLU(Module):
     def forward(self, x: Tensor) -> Tensor:
-        ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
-        ### END YOUR SOLUTION
+        return ops.relu(x)
 
 class Sequential(Module):
     def __init__(self, *modules):

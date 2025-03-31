@@ -279,6 +279,20 @@ class Exp(TensorOp):
 def exp(a):
     return Exp()(a)
 
+class GreaterthanScalar(TensorOp):
+    def __init__(self, scalar):
+        self.scalar = scalar
+    def compute(self, a):
+        return array_api.greater(a, self.scalar).astype(a.dtype)
+    def gradient(self, out_grad, node):
+        # should not be called
+        raise NotImplementedError()
+     
+
+
+def greaterthan_scalar(a, scalar):
+    return GreaterthanScalar(scalar)(a)
+
 
 class ReLU(TensorOp):
     def compute(self, a):
@@ -286,10 +300,10 @@ class ReLU(TensorOp):
 
     def gradient(self, out_grad, node):
         a = node.inputs[0]
-        # relu_mask = a > 0
-        relu_mask = Tensor(
-            array_api.greater(a.realize_cached_data(), 0).astype(a.realize_cached_data().dtype),
-        )
+        # relu_mask = Tensor(
+        #     array_api.greater(a.realize_cached_data(), 0).astype(a.realize_cached_data().dtype),
+        # )
+        relu_mask = greaterthan_scalar(a, 0)
         return (multiply(out_grad, relu_mask),)
         
 
