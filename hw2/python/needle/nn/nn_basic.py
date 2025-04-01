@@ -135,16 +135,20 @@ class Sequential(Module):
         self.modules = modules
 
     def forward(self, x: Tensor) -> Tensor:
-        ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
-        ### END YOUR SOLUTION
+        for module in self.modules:
+            x = module(x)
+        return x
+
 
 
 class SoftmaxLoss(Module):
     def forward(self, logits: Tensor, y: Tensor):
-        ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
-        ### END YOUR SOLUTION
+        y_one_hot = init.one_hot(logits.shape[-1], y, device=logits.device)
+        zy = ops.summation(ops.multiply(y_one_hot, logits), axes=(-1,))
+
+        log_sum_exp = ops.logsumexp(logits, axes=(-1,))
+        return ops.divide_scalar(ops.summation(ops.add(log_sum_exp, ops.negate(zy))), logits.shape[0])
+        
 
 
 class BatchNorm1d(Module):
