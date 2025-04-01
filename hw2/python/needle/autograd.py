@@ -362,6 +362,29 @@ class Tensor(Value):
     __radd__ = __add__
     __rmul__ = __mul__
 
+    def gen_mermaid(self):
+        print("graph TD")
+        visited = set()
+
+        def traverse(node):
+            if node in visited:
+                return 
+            visited.add(node)
+            print(f"  {node.__hash__()}[\"{node.__repr__()}\"]")
+            if node.op:
+                print(f"  {node.op.__hash__()}((\"{node.op.__class__.__name__}\"))")
+                print(f"  {node.op.__hash__()} --> {node.__hash__()}")
+                for input in node.inputs:
+                    print(f"  {input.__hash__()} --> {node.op.__hash__()}")
+                    traverse(input)
+        traverse(self)
+
+
+
+
+
+
+
 
 
 
