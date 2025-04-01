@@ -207,17 +207,25 @@ class Summation(TensorOp):
 
     def gradient(self, out_grad, node):
         a = node.inputs[0]
+
         shape = []
         if self.axes is None:
             shape = [1] * len(a.shape)
         else:
-            shape = [1 if i in self.axes else a.shape[i] for i in range(len(a.shape))]
+            # create a new axes with negative indices added len(a.shape)
+            if isinstance(self.axes, int):
+                self.axes = (self.axes,)
+            pos_axes = tuple([i + len(a.shape) if i < 0 else i for i in self.axes])
+
+            shape = [1 if i in pos_axes else a.shape[i] for i in range(len(a.shape))]
+
         return broadcast_to(reshape(out_grad, tuple(shape)), a.shape)
 
 
 
 def summation(a, axes=None):
     return Summation(axes)(a)
+
 
 
 
