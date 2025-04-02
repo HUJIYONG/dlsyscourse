@@ -120,9 +120,12 @@ class Linear(Module):
 
 class Flatten(Module):
     def forward(self, X):
-        ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
-        ### END YOUR SOLUTION
+        B = X.shape[0]
+        dims = 1
+        for i in range(1, len(X.shape)):
+            dims *= X.shape[i]
+        return ops.reshape(X, (B, dims))
+
 
 
 class ReLU(Module):
@@ -157,14 +160,49 @@ class BatchNorm1d(Module):
         self.dim = dim
         self.eps = eps
         self.momentum = momentum
-        ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
-        ### END YOUR SOLUTION
+
+        self.weight = Parameter(init.ones(dim, device=device, dtype=dtype, requires_grad=True))
+        self.bias   = Parameter(init.zeros(dim, device=device, dtype=dtype, requires_grad=True))
+        self.running_mean = Tensor(init.zeros(dim, device=device, dtype=dtype))
+        self.running_var = Tensor(init.ones(dim, device=device, dtype=dtype))
 
     def forward(self, x: Tensor) -> Tensor:
-        ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
-        ### END YOUR SOLUTION
+        B = 1
+        for i in range(len(x.shape) - 1):
+            B *= x.shape[i]
+
+        shape_bc = lambda t: ops.broadcast_to(ops.reshape(t, (1, x.shape[-1])), x.shape)
+
+        if self.training:
+            batch_avg = ops.summation(x, axes=tuple(range(len(x.shape) - 1))) / B
+            batch_var = ops.summation(ops.power_scalar(ops.add(x, shape_bc(ops.negate(batch_avg))), 2), axes=tuple(range(len(x.shape) - 1))) / B
+
+            self.running_mean = self.running_mean * (1 - self.momentum) + batch_avg * self.momentum
+            self.running_var  = self.running_var  * (1 - self.momentum) + batch_var * self.momentum
+
+            return ops.add(
+                ops.multiply(
+                    shape_bc(self.weight),
+                    ops.divide(
+                        ops.add(x, shape_bc(ops.negate(batch_avg))),
+                        shape_bc(ops.power_scalar(ops.add_scalar(batch_var, self.eps), 0.5))
+                    )
+                ),
+                shape_bc(self.bias)
+            )
+
+        else:
+            return ops.add(
+                ops.multiply(
+                    shape_bc(self.weight),
+                    ops.divide(
+                        ops.add(x, shape_bc(ops.negate(self.running_mean))), 
+                        shape_bc(ops.power_scalar(ops.add_scalar(self.running_var, self.eps), 0.5))
+                    )
+                ),
+                shape_bc(self.bias)
+            )
+        
 
 
 
