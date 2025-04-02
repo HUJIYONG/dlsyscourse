@@ -173,14 +173,29 @@ class LayerNorm1d(Module):
         super().__init__()
         self.dim = dim
         self.eps = eps
-        ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
-        ### END YOUR SOLUTION
+        self.weight = Parameter(init.ones(dim, device=device, dtype=dtype, requires_grad=True))
+        self.bias   = Parameter(init.zeros(dim, device=device, dtype=dtype, requires_grad=True))  
 
     def forward(self, x: Tensor) -> Tensor:
-        ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
-        ### END YOUR SOLUTION
+        avg = ops.broadcast_to(ops.reshape(ops.summation(x, axes=(-1,))/ x.shape[-1], (*x.shape[:-1], 1)), x.shape)
+
+        var = ops.broadcast_to(ops.reshape(
+            ops.summation(ops.power_scalar(ops.add(x, ops.negate(avg)), 2), axes=(-1,)) / x.shape[-1], 
+            (*x.shape[:-1], 1)
+        ), x.shape)
+
+        # weight * (x - avg) / sqrt(var + eps) + bias
+        return ops.add(
+            ops.multiply(
+                ops.broadcast_to(self.weight, x.shape), 
+                ops.divide(
+                    ops.add(x, ops.negate(avg)), 
+                    ops.power_scalar(ops.add_scalar(var, self.eps), 0.5)
+                )
+            ), 
+            ops.broadcast_to(self.bias, x.shape)
+        )
+
 
 
 class Dropout(Module):
