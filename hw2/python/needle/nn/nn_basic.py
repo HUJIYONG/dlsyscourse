@@ -242,9 +242,8 @@ class Dropout(Module):
         self.p = p
 
     def forward(self, x: Tensor) -> Tensor:
-        ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
-        ### END YOUR SOLUTION
+        rand_mask = init.randb(*x.shape, p=1 - self.p, device=x.device)
+        return ops.multiply(x, rand_mask) / (1 - self.p)
 
 
 class Residual(Module):
@@ -253,6 +252,5 @@ class Residual(Module):
         self.fn = fn
 
     def forward(self, x: Tensor) -> Tensor:
-        ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
-        ### END YOUR SOLUTION
+        return ops.add(self.fn(x), x)
+        
