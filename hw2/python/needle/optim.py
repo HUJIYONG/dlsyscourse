@@ -1,6 +1,7 @@
 """Optimization module"""
 import needle as ndl
 import numpy as np
+import needle.init as init
 
 
 class Optimizer:
@@ -24,9 +25,19 @@ class SGD(Optimizer):
         self.weight_decay = weight_decay
 
     def step(self):
-        ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
-        ### END YOUR SOLUTION
+        for p in self.params:
+            if p.requires_grad:
+                if self.u.get(p) is None:
+                    self.u[p] = init.zeros(*p.shape, device=p.device)
+                
+                self.u[p].data = self.u[p].data * self.momentum + p.grad.data * (1 - self.momentum)
+
+                if self.weight_decay > 0:
+                    p.data = p.data - self.lr * (self.weight_decay * p.data)
+
+                p.data = p.data - self.lr * self.u[p].data
+
+
 
     def clip_grad_norm(self, max_norm=0.25):
         """
