@@ -31,7 +31,7 @@ class AddScalar(TensorOp):
         self.scalar = scalar
 
     def compute(self, a: NDArray):
-        return a + self.scalar
+        return array_api.add(a, self.scalar, dtype=a.dtype)
 
     def gradient(self, out_grad: Tensor, node: Tensor):
         return (out_grad,)
@@ -59,7 +59,7 @@ class MulScalar(TensorOp):
         self.scalar = scalar
 
     def compute(self, a: NDArray):
-        return a * self.scalar
+        return array_api.multiply(a, self.scalar, dtype=a.dtype)
 
     def gradient(self, out_grad: Tensor, node: Tensor):
         return (mul_scalar(out_grad, self.scalar),) 
@@ -73,7 +73,7 @@ class EWisePow(TensorOp):
     """Op to element-wise raise a tensor to a power."""
 
     def compute(self, a: NDArray, b: NDArray) -> NDArray:
-        return a ** b
+        return array_api.power(a, b, dtype=a.dtype)
         
     def gradient(self, out_grad, node):
         a, b = node.inputs
@@ -94,7 +94,7 @@ class PowerScalar(TensorOp):
         self.scalar = scalar
 
     def compute(self, a: NDArray) -> NDArray:
-        return a ** self.scalar
+        return array_api.power(a, self.scalar, dtype=a.dtype)
 
     def gradient(self, out_grad, node):
         a = node.inputs[0]
@@ -110,7 +110,7 @@ class EWiseDiv(TensorOp):
     EPSILON = 1e-8
 
     def compute(self, a, b):
-        return a / (b + self.EPSILON)
+        return array_api.divide(a, b + self.EPSILON, dtype=a.dtype)
 
     def gradient(self, out_grad, node):
         a, b = node.inputs
@@ -132,7 +132,7 @@ class DivScalar(TensorOp):
         self.scalar = scalar
 
     def compute(self, a):
-        return a / self.scalar
+        return array_api.divide(a, self.scalar, dtype=a.dtype)
 
     def gradient(self, out_grad, node):
         return (divide_scalar(out_grad, self.scalar),)
