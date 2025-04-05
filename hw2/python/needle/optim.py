@@ -27,15 +27,14 @@ class SGD(Optimizer):
     def step(self):
         for p in self.params:
             if p.requires_grad:
-                if self.u.get(p) is None:
-                    self.u[p] = init.zeros(*p.shape, device=p.device)
-                
-                self.u[p].data = self.u[p].data * self.momentum + p.grad.data * (1 - self.momentum)
+                if self.u.get(id(p)) is None:
+                    self.u[id(p)] = init.zeros(*p.shape, device=p.device)
 
-                if self.weight_decay > 0:
-                    p.data = p.data - self.lr * (self.weight_decay * p.data)
+                grad_with_weight_decay = p.grad.data + self.weight_decay * p.data
 
-                p.data = p.data - self.lr * self.u[p].data
+                self.u[id(p)].data = self.u[id(p)].data * self.momentum + grad_with_weight_decay.data * (1 - self.momentum)
+
+                p.data = p.data - self.lr * self.u[id(p)].data
 
 
 
@@ -70,6 +69,25 @@ class Adam(Optimizer):
         self.v = {}
 
     def step(self):
-        ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
-        ### END YOUR SOLUTION
+        self.t += 1
+        for p in self.params:
+            if p.requires_grad:
+                if self.m.get(id(p)) is None:
+                    self.m[id(p)] = init.zeros(*p.shape, device=p.device)
+                if self.v.get(id(p)) is None:
+                    self.v[id(p)] = init.zeros(*p.shape, device=p.device)
+
+                grad_with_weight_decay = p.grad.data + self.weight_decay * p.data
+
+                self.m[id(p)] = self.beta1 * self.m[id(p)].data + (1 - self.beta1) * grad_with_weight_decay.data
+                self.v[id(p)] = self.beta2 * self.v[id(p)].data + (1 - self.beta2) * grad_with_weight_decay.data ** 2
+
+                m_hat = self.m[id(p)].data / (1 - self.beta1 ** self.t)
+                v_hat = self.v[id(p)].data / (1 - self.beta2 ** self.t)
+
+                p.data = p.data - self.lr * m_hat / (v_hat ** 0.5 + self.eps)
+
+
+ 
+
+
