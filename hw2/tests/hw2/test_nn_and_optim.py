@@ -2383,3 +2383,29 @@ def submit_mlp_resnet():
     mugrade.submit(train_epoch_1(7, 256, ndl.optim.Adam, lr=0.01, weight_decay=0.01))
     mugrade.submit(eval_epoch_1(12, 154))
     mugrade.submit(train_mnist_1(550, 1, ndl.optim.SGD, 0.01, 0.01, 7))
+
+
+def gen_whole_mermaid():
+    print("graph TD")
+    visited = set()
+
+    for tensor in ndl.autograd.LIVE_TENSORS:
+        print(f"  {tensor.__hash__()}[\"{tensor.requires_grad} {tensor.__repr__()}\"]")
+        
+
+    def traverse(node):
+        if node in visited:
+            return 
+        visited.add(node)
+        
+        if node.op:
+            print(f"  {node.op.__hash__()}((\"{node.op.__class__.__name__}\"))")
+            print(f"  {node.op.__hash__()} --> {node.__hash__()}")
+            for input in node.inputs:
+                print(f"  {input.__hash__()} --> {node.op.__hash__()}")
+                traverse(input)
+    
+    for tensor in ndl.autograd.LIVE_TENSORS:
+        traverse(tensor)
+
+

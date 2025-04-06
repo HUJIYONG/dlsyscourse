@@ -79,8 +79,8 @@ class Adam(Optimizer):
 
                 grad_with_weight_decay = p.grad.data + self.weight_decay * p.data
 
-                self.m[id(p)] = self.beta1 * self.m[id(p)].data + (1 - self.beta1) * grad_with_weight_decay.data
-                self.v[id(p)] = self.beta2 * self.v[id(p)].data + (1 - self.beta2) * grad_with_weight_decay.data ** 2
+                self.m[id(p)].data = self.beta1 * self.m[id(p)].data + (1 - self.beta1) * grad_with_weight_decay.data
+                self.v[id(p)].data = self.beta2 * self.v[id(p)].data + (1 - self.beta2) * grad_with_weight_decay.data ** 2
 
                 m_hat = self.m[id(p)].data / (1 - self.beta1 ** self.t)
                 v_hat = self.v[id(p)].data / (1 - self.beta2 ** self.t)
