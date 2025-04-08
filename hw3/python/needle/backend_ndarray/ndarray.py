@@ -312,7 +312,7 @@ class NDArray:
             else:
                 new_strides.append(0)
 
-        return NDArray.make(new_shape, strides=new_strides, device=self.device, handle=self._handle, offset=self._offset)
+        return NDArray.make(new_shape, strides=tuple(new_strides), device=self.device, handle=self._handle, offset=self._offset)
 
 
     ### Get and set elements
@@ -378,14 +378,16 @@ class NDArray:
         )
         assert len(idxs) == self.ndim, "Need indexes equal to number of dimensions"
 
-        # create new shape and strides
-        new_shape = []
-        new_strides = []
-        for i in range(len(idxs)):
-            new_shape.append((idxs[i].stop - idxs[i].start) // idxs[i].step)
-            new_strides.append(self.strides[i] * idxs[i].step)
+        new_shape = tuple([(idx.stop - idx.start + idx.step - 1) // idx.step for idx in idxs])
+        new_strides = tuple([stride * idx.step for stride, idx in zip(self.strides, idxs)])
 
-        return NDArray.make(tuple(new_shape), strides=tuple(new_strides), device=self.device, handle=self._handle, offset=self._offset)
+        offsets = [stride * idx.start for stride, idx in zip(self.strides, idxs)]
+        new_offset = self._offset
+        for _ in offsets:
+            new_offset += _
+
+
+        return NDArray.make(tuple(new_shape), strides=tuple(new_strides), device=self.device, handle=self._handle, offset=new_offset)
 
     def __setitem__(self, idxs, other):
         """Set the values of a view into an array, using the same semantics
