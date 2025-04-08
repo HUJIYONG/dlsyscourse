@@ -61,9 +61,29 @@ void Compact(const AlignedArray& a, AlignedArray* out, std::vector<int32_t> shap
    *  void (you need to modify out directly, rather than returning anything; this is true for all the
    *  function will implement here, so we won't repeat this note.)
    */
-  /// BEGIN SOLUTION
-  assert(false && "Not Implemented");
-  /// END SOLUTION
+    int32_t num_dims = shape.size();
+    std::vector<int32_t> indexs(num_dims);
+    auto add_indexs = [&]() -> bool {
+        for(int32_t i = num_dims - 1; i >= 0; i --) {
+            if(indexs[i] < shape[i] - 1) {
+                indexs[i] += 1;
+                return false;
+            } else {
+                indexs[i] = 0;
+            }
+        }
+        return true;
+    };
+
+    int32_t cnt = 0;
+    do {
+        int32_t ori_index = 0;
+        for(int i = 0; i < num_dims; i++) {
+            ori_index += indexs[i] * strides[i];
+        }
+        out->ptr[cnt++] = a.ptr[offset + ori_index];
+    } while(!add_indexs());
+    return;
 }
 
 void EwiseSetitem(const AlignedArray& a, AlignedArray* out, std::vector<int32_t> shape,
@@ -78,9 +98,31 @@ void EwiseSetitem(const AlignedArray& a, AlignedArray* out, std::vector<int32_t>
    *   strides: strides of the *out* array (not a, which has compact strides)
    *   offset: offset of the *out* array (not a, which has zero offset, being compact)
    */
-  /// BEGIN SOLUTION
-  assert(false && "Not Implemented");
-  /// END SOLUTION
+
+    int32_t num_dims = shape.size();
+    std::vector<int32_t> indexs(num_dims);
+    auto add_indexs = [&]() -> bool {
+        for(int32_t i = num_dims - 1; i >= 0; i --) {
+            if(indexs[i] < shape[i] - 1) {
+                indexs[i] += 1;
+                return false;
+            } else {
+                indexs[i] = 0;
+            }
+        }
+        return true;
+    };
+
+
+    int32_t cnt = 0;
+    do {
+        int32_t out_index = 0;
+        for(int i = 0; i < num_dims; i++) {
+            out_index += indexs[i] * strides[i];
+        }
+        out->ptr[offset + out_index] = a.ptr[cnt++];
+    } while(!add_indexs());
+    return;
 }
 
 void ScalarSetitem(const size_t size, scalar_t val, AlignedArray* out, std::vector<int32_t> shape,
@@ -99,9 +141,30 @@ void ScalarSetitem(const size_t size, scalar_t val, AlignedArray* out, std::vect
    *   offset: offset of the out array
    */
 
-  /// BEGIN SOLUTION
-  assert(false && "Not Implemented");
-  /// END SOLUTION
+
+    int32_t num_dims = shape.size();
+    std::vector<int32_t> indexs(num_dims);
+    auto add_indexs = [&]() -> bool {
+        for(int32_t i = num_dims - 1; i >= 0; i --) {
+            if(indexs[i] < shape[i] - 1) {
+                indexs[i] += 1;
+                return false;
+            } else {
+                indexs[i] = 0;
+            }
+        }
+        return true;
+    };
+
+    int32_t cnt = 0;
+    do {
+        int32_t out_index = 0;
+        for(int i = 0; i < num_dims; i++) {
+            out_index += indexs[i] * strides[i];
+        }
+        out->ptr[offset + out_index] = val;
+    } while(!add_indexs());
+    return;
 }
 
 void EwiseAdd(const AlignedArray& a, const AlignedArray& b, AlignedArray* out) {
