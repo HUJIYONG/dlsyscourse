@@ -300,6 +300,9 @@ class NDArray:
             point to the same memory as the original array.
         """
 
+        if len(self.shape) != len(new_shape):
+            raise ValueError("Shape mismatch")
+
         for i in range(len(self.shape)):
             if self.shape[i] != 1 and self.shape[i] != new_shape[i]:
                 raise ValueError("Shape mismatch")
