@@ -83,23 +83,19 @@ void Fill(CudaArray* out, scalar_t val) {
 
 __global__ void CompactKernel(const scalar_t* a, scalar_t* out, size_t size, CudaVec shape,
                               CudaVec strides, size_t offset) {
-  /**
-   * The CUDA kernel for the compact opeation.  This should effectively map a single entry in the 
-   * non-compact input a, to the corresponding item (at location gid) in the compact array out.
-   * 
-   * Args:
-   *   a: CUDA pointer to a array
-   *   out: CUDA point to out array
-   *   size: size of out array
-   *   shape: vector of shapes of a and out arrays (of type CudaVec, for past passing to CUDA kernel)
-   *   strides: vector of strides of out array
-   *   offset: offset of out array
-   */
-  size_t gid = blockIdx.x * blockDim.x + threadIdx.x;
 
-  /// BEGIN SOLUTION
-  assert(false && "Not Implemented");
-  /// END SOLUTION
+    size_t gid = blockIdx.x * blockDim.x + threadIdx.x;
+    
+    // figure out index
+    int32_t index = gid;
+    int32_t i_a = 0;
+    for(int i = shape.size - 1; i >=0; i --) {
+      i_a += (index % shape.data[i]) * strides.data[i];
+      index = index / mod;      
+    }
+
+    out[gid] = a[i_a]; 
+
 }
 
 void Compact(const CudaArray& a, CudaArray* out, std::vector<int32_t> shape,
