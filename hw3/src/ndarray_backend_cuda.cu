@@ -330,9 +330,11 @@ __global__ void mm(const scalar_t* a, const scalar_t* b , scalar_t* out, uint32_
     int ythread = threadIdx.y;
     int xthread = threadIdx.x;
 
-    int m = _MIN_(M, (yblock + 1) * BLOCK_TILE) - yblock * BLOCK_TILE;
-    int p = _MIN_(P, (xblock + 1) * BLOCK_TILE) - xblock * BLOCK_TILE;
+    // int m = _MIN_(M, (yblock + 1) * BLOCK_TILE) - yblock * BLOCK_TILE;
+    // int p = _MIN_(P, (xblock + 1) * BLOCK_TILE) - xblock * BLOCK_TILE;
 
+    int m = _MIN_(M - yblock * BLOCK_TILE, BLOCK_TILE);
+    int p = _MIN_(P - xblock * BLOCK_TILE, BLOCK_TILE);
 
     // start index in out of this block
     int32_t C_y = yblock * BLOCK_TILE;
@@ -346,7 +348,7 @@ __global__ void mm(const scalar_t* a, const scalar_t* b , scalar_t* out, uint32_
     int s_x = xthread * THREAD_TILE; 
 
     for(int32_t ko = 0; ko < N; ko += BLOCK_TILE) {
-        int n = _MIN_(N, ko + BLOCK_TILE) - ko;
+        int n = _MIN_(N - ko, BLOCK_TILE);
         int32_t A_x = ko;
         int32_t B_y = ko;
 
@@ -357,14 +359,19 @@ __global__ void mm(const scalar_t* a, const scalar_t* b , scalar_t* out, uint32_
 
         // for threads in block:
         // sX[ythread * V +: V, xtherad * V +: V]
+
         for(int i = 0; i < THREAD_TILE; i ++) {
             for(int j = 0; j < THREAD_TILE; j ++) {
                 if((s_y + i < m) && (s_x + j < n)) {
                     sA[s_y + i][s_x + j] = a[(A_y + s_y + i) * N + (A_x + s_x + j)];
+                } else {
+                    sA[s_y + i][s_x + j] = 0;
                 }
                 if((s_y + i < n) && (s_x + j < p)) {
-                    sB[s_y + i][s_x + j] = b[(B_y + s_y + i) * N + (B_x + s_x + j)];
-                }               
+                    sB[s_y + i][s_x + j] = b[(B_y + s_y + i) * P + (B_x + s_x + j)];
+                } else {
+                    sB[s_y + i][s_x + j] = 0;
+                }        
             }
         }
 
@@ -376,10 +383,12 @@ __global__ void mm(const scalar_t* a, const scalar_t* b , scalar_t* out, uint32_
                     for(int k = 0; k < n; k ++) {
                         c[i][j] += sA[s_y + i][k] * sB[k][s_x + j]; 
                     }
-                }
+                } 
             }
         }
     }
+
+    __syncthreads();
 
     // write back c to out
     for(int i = 0; i < THREAD_TILE; i ++) {
@@ -421,8 +430,10 @@ void Matmul(const CudaArray& a, const CudaArray& b, CudaArray* out, uint32_t M, 
 
     CudaDims dim;
     dim.grid = dim3(
-        (M + BLOCK_TILE - 1) / BLOCK_TILE,
-        (P + BLOCK_TILE - 1) / BLOCK_TILE,
+        // (M + BLOCK_TILE - 1) / BLOCK_TILE,
+        // (P + BLOCK_TILE - 1) / BLOCK_TILE,
+        M / BLOCK_TILE,
+        P / BLOCK_TILE,
         1
     );
 
